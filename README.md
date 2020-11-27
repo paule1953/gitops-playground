@@ -91,7 +91,7 @@ Find the ArgoCD UI on http://localhost:9092
 Login with `admin/admin`
 
 ## Test applications deployed via GitOps
-
+TODO add docs for hostname option and add links here
 ##### PetClinic via Flux V1
 
 * [Jenkinsfile](applications/petclinic/fluxv1/plain-k8s/Jenkinsfile)
@@ -115,6 +115,10 @@ Login with `admin/admin`
 * [Jenkinsfile](applications/petclinic/argocd/plain-k8s/Jenkinsfile)
   * [localhost:9020](http://localhost:9020) (Staging)
   * [localhost:9021](http://localhost:9021) (Production) 
+
+##### 3rd Party app (NGINX) via ArgoCD
+
+* [localhost:9022](http://localhost:9022) (Production) 
 
 ## Remove apps from cluster
 

@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+HOSTNAMES=("jenkins" "scmm" "registry"
+  "fluxv1-petclinic-staging" "fluxv1-petclinic"
+  "fluxv1-nginx-staging" "fluxv1-nginx"
+  "fluxv2-petclinic-staging" "fluxv2-petclinic"
+  "argo-petclinic-staging" "argo-petclinic"
+  "argo-nginx"
+)
+  
 function confirm() {
   # shellcheck disable=SC2145
   # - the line break between args is intended here!
@@ -33,4 +41,24 @@ function spinner() {
         printf $reset
     done
     echo " [ok] $info"
+}
+
+function createHostNames() {
+  local IP=127.0.0.1
+  
+  echo "Writing the following to /etc/hosts. ${IP}":
+  echo "Hosts: " "${HOSTNAMES[@]}"
+
+  for NAME in "${HOSTNAMES[@]}"
+  do
+       echo "${IP} ${NAME}" | sudo tee --append /etc/hosts
+  done
+}
+
+function deleteHostNames() {
+  echo "Deleting entries from /etc/hosts: " "${HOSTNAMES[@]}"
+
+  for NAME in "${HOSTNAMES[@]}"; do
+       sudo sed -i "/${NAME}/d" /etc/hosts
+  done
 }

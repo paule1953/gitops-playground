@@ -64,6 +64,8 @@ function main() {
 
   # Create Jenkins agent working dir explicitly. Otherwise it seems to be owned by root
   mkdir -p ${JENKINS_HOME}
+
+  createHostnamesIfNecessary
   printWelcomeScreen
 }
 
@@ -247,7 +249,16 @@ function setMainBranch() {
     "http://${SCM_USER}:${SCM_PWD}@localhost:${SCMM_PORT}/scm/api/v2/config/git/${TARGET_REPO_SCMM}"
 }
 
+function createHostnamesIfNecessary() {
+  confirm "Create hostnames for jenkins, scm-manager, etc. in /etc/hosts for more convenient access?" 'Continue? y/n [n]' ||
+    exit 0
+
+  deleteHostNames
+  createHostNames
+}
+
 function printWelcomeScreen() {
+  # TODO if createHostNames() was called use hostnames here and not localhost and port
   echo
   echo
   echo "|-----------------------------------------------------------------------------------------------------------------------|"

@@ -48,6 +48,11 @@ function cleanup () {
   kubectl delete customresourcedefinition.apiextensions.k8s.io/appprojects.argoproj.io || true
   kubectl delete apiservice.apiregistration.k8s.io/v1alpha1.argoproj.io || true
   kubectl delete appproject.argoproj.io/default || true
+  
+  if grep -q "${HOSTNAMES[1]}" /etc/hosts; then
+    confirm "Delete hostnames for jenkins, scm-manager, from /etc/hosts?" 'y/n [n]' && 
+      deleteHostNames
+  fi
 }
 
 function main() {
