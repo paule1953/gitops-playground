@@ -66,7 +66,7 @@ The scripts also prints a little intro on how to get started with a GitOps deplo
 
 ### Jenkins
 
-Find jenkins on http://localhost:9090
+Find scm-manager on [localhost:9090](http://localhost:9090) or [jenkins](http://jenkins) (when using `/etc/hosts` option in `apply.sh`) 
 
 Admin user: Same as SCM-Manager - `scmadmin/scmadmin`
 Change in `jenkins-credentials.yaml` if necessary.
@@ -80,45 +80,55 @@ Note: You can enable browser notifications about build results via a button in t
 
 ### SCM-Manager
 
-Find scm-manager on http://localhost:9091
+Find scm-manager on [localhost:9091](http://localhost:9091) or [scmm](http://scmm) (when using `/etc/hosts` option in `apply.sh`) 
 
 Login with `scmadmin/scmadmin`
 
 ### ArgoCD UI
 
-Find the ArgoCD UI on http://localhost:9092
+Find the ArgoCD UI [localhost:9092](http://localhost:9092) or [argo](http://argo) (when using `/etc/hosts` option in `apply.sh`) 
 
 Login with `admin/admin`
 
 ## Test applications deployed via GitOps
-TODO add docs for hostname option and add links here
+
+You can always reach the pods via its localhost address. If prefer to use hostnames, `apply.sh` can add entries to your
+`/etc/hosts`. They can then reached conveniently via k3s load balancer and default HTTP port 80, so you don't need to 
+remember the port numbers.
+
 ##### PetClinic via Flux V1
 
 * [Jenkinsfile](applications/petclinic/fluxv1/plain-k8s/Jenkinsfile)
-  * [localhost:9000](http://localhost:9000) (Staging)
-  * [localhost:9001](http://localhost:9001) (Production) 
+  * Staging: [localhost:9000](http://localhost:9000) / [fluxv1-petclinic-plain-staging](http://fluxv1-petclinic-plain)
+  * Production: [localhost:9001](http://localhost:9001) / [fluxv1-petclinic-plain](http://fluxv1-petclinic-plain)
 
 ##### 3rd Party app (NGINX) via Flux V1
-
 * [Jenkinsfile](applications/nginx/fluxv1/Jenkinsfile)
-  * [localhost:9002](http://localhost:9002) (Staging)
-  * [localhost:9003](http://localhost:9003) (Production)
+  * Staging: [localhost:9002](http://localhost:9002) / [fluxv1-nginx-staging](http://fluxv1-nginx-staging)
+  * Production: [localhost:9003](http://localhost:9003) / [fluxv1-nginx-staging](http://fluxv1-nginx)
 
-##### PetClinic via Flux V2
+##### PetClinic via Flux V2 (via plain k8s resources)
 
 * [Jenkinsfile](applications/petclinic/fluxv2/plain-k8s/Jenkinsfile)
-  * [localhost:9010](http://localhost:9010) (Staging)
-  * [localhost:9011](http://localhost:9011) (Production) 
+  * Staging: [localhost:9010](http://localhost:9010) / [fluxv2-petclinic-plain-staging](http://fluxv2-petclinic-plain-staging)
+  * Production: [localhost:9011](http://localhost:9011) / [fluxv2-petclinic-plain](http://fluxv2-petclinic-plain)
+
+##### PetClinic via Flux V2 (via helm)
+
+! TODO !
+* [Jenkinsfile](applications/petclinic/fluxv2/plain-k8s/Jenkinsfile)
+  * Staging: [localhost:9012](http://localhost:9012) / [fluxv2-petclinic-helm-staging](http://fluxv2-petclinic-plain-helm)
+  * Production: [localhost:9013](http://localhost:9013) / [fluxv2-petclinic-helm](http://fluxv2-petclinic-helm)
   
 ##### PetClinic via ArgoCD
-
+  
 * [Jenkinsfile](applications/petclinic/argocd/plain-k8s/Jenkinsfile)
-  * [localhost:9020](http://localhost:9020) (Staging)
-  * [localhost:9021](http://localhost:9021) (Production) 
+  * Staging: [localhost:9020](http://localhost:9020) / [argo-petclinic-plain-staging](http://argo-petclinic-plain-staging)
+  * Production: [localhost:9021](http://localhost:9021)  / [argo-petclinic-plain](http://argo-petclinic-plain)
 
 ##### 3rd Party app (NGINX) via ArgoCD
 
-* [localhost:9022](http://localhost:9022) (Production) 
+* [localhost:9022](http://localhost:9022) / [argo-nginx](http://argo-nginx) 
 
 ## Remove apps from cluster
 

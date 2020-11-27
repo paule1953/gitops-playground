@@ -1,1 +1,4 @@
 service.port: 9022
+ingress:
+  enabled: true
+  hostname: argo-nginx

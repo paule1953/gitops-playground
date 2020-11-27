@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-HOSTNAMES=("jenkins" "scmm" "registry"
-  "fluxv1-petclinic-staging" "fluxv1-petclinic"
+HOSTNAMES=("jenkins" "scmm" "registry" "argo"
+  "fluxv1-petclinic-plain-staging" "fluxv1-plain-petclinic"
   "fluxv1-nginx-staging" "fluxv1-nginx"
-  "fluxv2-petclinic-staging" "fluxv2-petclinic"
-  "argo-petclinic-staging" "argo-petclinic"
+  "fluxv2-petclinic-plain-staging" "fluxv2-petclinic-plain"
+  "argo-petclinic-plain-staging" "argo-petclinic-plain"
   "argo-nginx"
 )
+HOSTNAMES_CREATED=''
   
 function confirm() {
   # shellcheck disable=SC2145
@@ -43,6 +44,61 @@ function spinner() {
     echo " [ok] $info"
 }
 
+function hostname() {
+    name=$1
+    
+    if [[ ! -z "$HOSTNAMES_CREATED" ]]; then 
+      echo $name
+      return
+    fi
+    
+    case $name in
+      registry)
+        echo localhost:8999
+        ;;
+      jenkins)
+        echo localhost:9090
+        ;;
+      scmm)
+        echo localhost:9091
+        ;;
+      argo)
+        echo localhost:9092
+        ;;
+      fluxv1-petclinic-plain-staging)
+        echo localhost:9000
+        ;;
+      fluxv1-plain-petclinic)
+        echo localhost:9001
+        ;;
+      fluxv1-nginx-staging)
+        echo localhost:9002
+        ;;
+      fluxv1-nginx)
+        echo localhost:9003
+        ;;
+      fluxv2-petclinic-plain-staging)
+        echo localhost:9010
+        ;;
+      fluxv2-petclinic-plain)
+        echo localhost:9011
+        ;;
+      argo-petclinic-plain-staging)
+        echo localhost:9020
+        ;;
+      argo-petclinic-plain)
+        echo localhost:9021
+        ;;
+      argo-nginx)
+        echo localhost:9022
+        ;;
+      *)
+        echo name
+        ;;
+    esac
+}
+
+
 function createHostNames() {
   local IP=127.0.0.1
   
@@ -53,6 +109,8 @@ function createHostNames() {
   do
        echo "${IP} ${NAME}" | sudo tee --append /etc/hosts
   done
+  
+  HOSTNAMES_CREATED=true
 }
 
 function deleteHostNames() {

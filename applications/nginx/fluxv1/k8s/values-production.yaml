@@ -1,2 +1,6 @@
 service:
   port: 9003
+
+ingress:
+  enabled: true
+  hostname: fluxv1-nginx

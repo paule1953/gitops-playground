@@ -2,3 +2,7 @@ service:
   port: 8999
   type: LoadBalancer
 
+ingress:
+  enabled: true
+  hosts:
+    - registry

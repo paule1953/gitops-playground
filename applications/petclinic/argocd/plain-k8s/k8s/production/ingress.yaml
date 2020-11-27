@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: petclinic-plain
+  namespace: argocd-production
+spec:
+  rules:
+    - host: "argo-petclinic-plain"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: spring-petclinic-plain
+              servicePort: http

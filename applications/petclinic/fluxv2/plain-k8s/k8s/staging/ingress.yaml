@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: petclinic-plain
+  namespace: fluxv2-staging
+spec:
+  rules:
+    - host: "fluxv2-petclinic-plain-staging"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: spring-petclinic-plain
+              servicePort: http
