@@ -33,6 +33,7 @@ SPRING_BOOT_HELN_CHART_REPO=${SPRING_BOOT_HELN_CHART_REPO:-'https://github.com/c
 SPRING_PETCLINIC_REPO=${SPRING_PETCLINIC_REPO:-'https://github.com/cloudogu/spring-petclinic.git'}
 GITOPS_BUILD_LIB_REPO=${GITOPS_BUILD_LIB_REPO:-'https://github.com/cloudogu/gitops-build-lib.git'}
 CES_BUILD_LIB_REPO=${CES_BUILD_LIB_REPO:-'https://github.com/cloudogu/ces-build-lib.git'}
+ARGOCD_HELM_CHART_SOURCE=${ARGOCD_HELM_CHART_SOURCE:-"argo/argo-cd --version 3.6.2"}
 
 function main() {
   DEBUG="${1}"
@@ -63,6 +64,8 @@ function main() {
   CONTAINERED="${26}"
   SKIP_HELM_UPDATE="${27}"
   ARGOCD_CONFIG_ONLY="${28}"
+  ARGOCD_PROXY_SERVER="${29}"
+  ARGOCD_SERVICEACCOUNT="${30}"
 
   if [[ $INSECURE == true ]]; then
     CURL_HOME="${PLAYGROUND_DIR}"
@@ -290,8 +293,10 @@ function initArgo() {
   fi
 
   if [[ ${ARGOCD_CONFIG_ONLY} == false ]]; then
-    helm upgrade -i argocd --values "${VALUES_YAML_PATH}" \
-      $(argoHelmSettingsForRemoteCluster) --version 2.9.5 argo/argo-cd -n argocd
+    # shellcheck disable=SC2086
+    # We are not putting ${ARGOCD_HELM_CHART_SOURCE} in double quotes, to prevent expansion of single quotes
+    helm upgrade -i argocd --values "${VALUES_YAML_PATH}" $(argoHelmSettingForProxyValues) $(argoHelmSettingForServiceAccount) \
+      $(argoHelmSettingsForRemoteCluster) ${ARGOCD_HELM_CHART_SOURCE} -n argocd
 
     BCRYPT_PW=$(bcryptPassword "${SET_PASSWORD}")
     # set argocd admin password to 'admin' here, because it does not work through the helm chart
@@ -363,6 +368,54 @@ function argoHelmSettingsForRemoteCluster() {
   if [[ $REMOTE_CLUSTER == true ]]; then
     # Can't set service nodePort for argo, so use normal service ports for both local and remote
     echo '--set server.service.servicePortHttp=80 --set server.service.servicePortHttps=443'
+  fi
+}
+
+function argoHelmSettingForProxyValues() {
+  if [[ -n "${ARGOCD_PROXY_SERVER}" ]]; then
+    TMP_PROXY_VALUES_FILE=$(mktemp /tmp/argo-proxy-values.XXXXXX)
+
+    echo "server:
+  env:
+  - name: http_proxy
+    value: $ARGOCD_PROXY_SERVER
+  - name: https_proxy
+    value: $ARGOCD_PROXY_SERVER
+  - name: NO_PROXY
+    value: argocd-repo-server,argocd-application-controller,argocd-metrics,argocd-server,argocd-server-metrics,argocd-redis,argocd-redis-ha-haproxy,argocd-dex-server,localhost,10.0.0.0/8
+repoServer:
+  env:
+  - name: http_proxy
+    value: $ARGOCD_PROXY_SERVER
+  - name: https_proxy
+    value: $ARGOCD_PROXY_SERVER
+  - name: NO_PROXY
+    value: argocd-repo-server,argocd-application-controller,argocd-metrics,argocd-server,argocd-server-metrics,argocd-redis,argocd-redis-ha-haproxy,argocd-dex-server,localhost,10.0.0.0/8
+"   >> $TMP_PROXY_VALUES_FILE
+
+    echo "--values $TMP_PROXY_VALUES_FILE"
+  fi
+}
+
+function argoHelmSettingForServiceAccount() {
+  if [[ -n "${ARGOCD_SERVICEACCOUNT}" ]]; then
+    TMP_SERVICEACCOUNT_VALUES_FILE=$(mktemp /tmp/argo-serviceaccount-values.XXXXXX)
+
+    echo "server:
+  serviceAccount:
+    create: false
+    name: $ARGOCD_SERVICEACCOUNT
+controller:
+  serviceAccount:
+    create: false
+    name: $ARGOCD_SERVICEACCOUNT
+dex:
+  serviceAccount:
+    create: false
+    name: $ARGOCD_SERVICEACCOUNT
+"   >> $TMP_SERVICEACCOUNT_VALUES_FILE
+
+    echo "--values $TMP_SERVICEACCOUNT_VALUES_FILE"
   fi
 }
 
@@ -700,7 +753,7 @@ function printParameters() {
 
 COMMANDS=$(getopt \
   -o hwdxyc \
-  --long help,fluxv1,fluxv2,argocd,welcome,debug,remote,username:,password:,jenkins-url:,jenkins-username:,jenkins-password:,registry-url:,registry-path:,registry-username:,registry-password:,scmm-url:,scmm-username:,scmm-password:,kubectl-image:,helm-image:,kubeval-image:,helmkubeval-image:,yamllint-image:,trace,insecure,yes,containered,skip-helm-update,argocd-config-only \
+  --long help,fluxv1,fluxv2,argocd,welcome,debug,remote,username:,password:,jenkins-url:,jenkins-username:,jenkins-password:,registry-url:,registry-path:,registry-username:,registry-password:,scmm-url:,scmm-username:,scmm-password:,kubectl-image:,helm-image:,kubeval-image:,helmkubeval-image:,yamllint-image:,argocd-proxy:,argocd-serviceaccount:,trace,insecure,yes,containered,skip-helm-update,argocd-config-only \
   -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -736,40 +789,44 @@ ASSUME_YES=false
 CONTAINERED=false
 SKIP_HELM_UPDATE=false
 ARGOCD_CONFIG_ONLY=false
+ARGOCD_PROXY_SERVER=""
+ARGOCD_SERVICEACCOUNT=""
 
 while true; do
   case "$1" in
-    -h | --help          ) printUsage; exit 0 ;;
-    --fluxv1             ) INSTALL_FLUXV1=true; INSTALL_ALL_MODULES=false; shift ;;
-    --fluxv2             ) INSTALL_FLUXV2=true; INSTALL_ALL_MODULES=false; shift ;;
-    --argocd             ) INSTALL_ARGOCD=true; INSTALL_ALL_MODULES=false; shift ;;
-    --remote             ) REMOTE_CLUSTER=true; shift ;;
-    --jenkins-url        ) JENKINS_URL="$2"; shift 2 ;;
-    --jenkins-username   ) JENKINS_USERNAME="$2"; shift 2 ;;
-    --jenkins-password   ) JENKINS_PASSWORD="$2"; shift 2 ;;
-    --registry-url       ) REGISTRY_URL="$2"; shift 2 ;;
-    --registry-path      ) REGISTRY_PATH="$2"; shift 2 ;;
-    --registry-username  ) REGISTRY_USERNAME="$2"; shift 2 ;;
-    --registry-password  ) REGISTRY_PASSWORD="$2"; shift 2 ;;
-    --scmm-url           ) SCMM_URL="$2"; shift 2 ;;
-    --scmm-username      ) SCMM_USERNAME="$2"; shift 2 ;;
-    --scmm-password      ) SCMM_PASSWORD="$2"; shift 2 ;;
-    --kubectl-image      ) KUBECTL_IMAGE="$2"; shift 2 ;;
-    --helm-image         ) HELM_IMAGE="$2"; shift 2 ;;
-    --kubeval-image      ) KUBEVAL_IMAGE="$2"; shift 2 ;;
-    --helmkubeval-image  ) HELMKUBEVAL_IMAGE="$2"; shift 2 ;;
-    --yamllint-image     ) YAMLLINT_IMAGE="$2"; shift 2 ;;
-    --insecure           ) INSECURE=true; shift ;;
-    --username           ) SET_USERNAME="$2"; shift 2 ;;
-    --password           ) SET_PASSWORD="$2"; shift 2 ;;
-    -w | --welcome       ) printWelcomeScreen; exit 0 ;;
-    -d | --debug         ) DEBUG=true; shift ;;
-    -x | --trace         ) TRACE=true; shift ;;
-    -y | --yes           ) ASSUME_YES=true; shift ;;
-    -c | --containered   ) CONTAINERED=true; shift ;;
-    --skip-helm-update   ) SKIP_HELM_UPDATE=true; shift ;;
-    --argocd-config-only ) ARGOCD_CONFIG_ONLY=true; shift ;;
-    --                   ) shift; break ;;
+    -h | --help                ) printUsage; exit 0 ;;
+    --fluxv1                   ) INSTALL_FLUXV1=true; INSTALL_ALL_MODULES=false; shift ;;
+    --fluxv2                   ) INSTALL_FLUXV2=true; INSTALL_ALL_MODULES=false; shift ;;
+    --argocd                   ) INSTALL_ARGOCD=true; INSTALL_ALL_MODULES=false; shift ;;
+    --remote                   ) REMOTE_CLUSTER=true; shift ;;
+    --jenkins-url              ) JENKINS_URL="$2"; shift 2 ;;
+    --jenkins-username         ) JENKINS_USERNAME="$2"; shift 2 ;;
+    --jenkins-password         ) JENKINS_PASSWORD="$2"; shift 2 ;;
+    --registry-url             ) REGISTRY_URL="$2"; shift 2 ;;
+    --registry-path            ) REGISTRY_PATH="$2"; shift 2 ;;
+    --registry-username        ) REGISTRY_USERNAME="$2"; shift 2 ;;
+    --registry-password        ) REGISTRY_PASSWORD="$2"; shift 2 ;;
+    --scmm-url                 ) SCMM_URL="$2"; shift 2 ;;
+    --scmm-username            ) SCMM_USERNAME="$2"; shift 2 ;;
+    --scmm-password            ) SCMM_PASSWORD="$2"; shift 2 ;;
+    --kubectl-image            ) KUBECTL_IMAGE="$2"; shift 2 ;;
+    --helm-image               ) HELM_IMAGE="$2"; shift 2 ;;
+    --kubeval-image            ) KUBEVAL_IMAGE="$2"; shift 2 ;;
+    --helmkubeval-image        ) HELMKUBEVAL_IMAGE="$2"; shift 2 ;;
+    --yamllint-image           ) YAMLLINT_IMAGE="$2"; shift 2 ;;
+    --insecure                 ) INSECURE=true; shift ;;
+    --username                 ) SET_USERNAME="$2"; shift 2 ;;
+    --password                 ) SET_PASSWORD="$2"; shift 2 ;;
+    --argocd-proxy             ) ARGOCD_PROXY_SERVER="$2"; shift 2 ;;
+    --argocd-serviceaccount    ) ARGOCD_SERVICEACCOUNT="$2"; shift 2 ;;
+    -w | --welcome             ) printWelcomeScreen; exit 0 ;;
+    -d | --debug               ) DEBUG=true; shift ;;
+    -x | --trace               ) TRACE=true; shift ;;
+    -y | --yes                 ) ASSUME_YES=true; shift ;;
+    -c | --containered         ) CONTAINERED=true; shift ;;
+    --skip-helm-update         ) SKIP_HELM_UPDATE=true; shift ;;
+    --argocd-config-only       ) ARGOCD_CONFIG_ONLY=true; shift ;;
+    --                         ) shift; break ;;
   *) break ;;
   esac
 done
@@ -784,6 +841,6 @@ if [[ $TRACE == true ]]; then
   # Trace without debug does not make to much sense, as the spinner spams the output
   DEBUG=true
 fi
-main "$DEBUG" "$INSTALL_ALL_MODULES" "$INSTALL_FLUXV1" "$INSTALL_FLUXV2" "$INSTALL_ARGOCD" "$REMOTE_CLUSTER" "$SET_USERNAME" "$SET_PASSWORD" "$JENKINS_URL" "$JENKINS_USERNAME" "$JENKINS_PASSWORD" "$REGISTRY_URL" "$REGISTRY_PATH" "$REGISTRY_USERNAME" "$REGISTRY_PASSWORD" "$SCMM_URL" "$SCMM_USERNAME" "$SCMM_PASSWORD" "$INSECURE" "$TRACE" "$KUBECTL_IMAGE" "$HELM_IMAGE" "$KUBEVAL_IMAGE" "$HELMKUBEVAL_IMAGE" "$YAMLLINT_IMAGE" "$CONTAINERED" "$SKIP_HELM_UPDATE" "$ARGOCD_CONFIG_ONLY"
+main "$DEBUG" "$INSTALL_ALL_MODULES" "$INSTALL_FLUXV1" "$INSTALL_FLUXV2" "$INSTALL_ARGOCD" "$REMOTE_CLUSTER" "$SET_USERNAME" "$SET_PASSWORD" "$JENKINS_URL" "$JENKINS_USERNAME" "$JENKINS_PASSWORD" "$REGISTRY_URL" "$REGISTRY_PATH" "$REGISTRY_USERNAME" "$REGISTRY_PASSWORD" "$SCMM_URL" "$SCMM_USERNAME" "$SCMM_PASSWORD" "$INSECURE" "$TRACE" "$KUBECTL_IMAGE" "$HELM_IMAGE" "$KUBEVAL_IMAGE" "$HELMKUBEVAL_IMAGE" "$YAMLLINT_IMAGE" "$CONTAINERED" "$SKIP_HELM_UPDATE" "$ARGOCD_CONFIG_ONLY" "$ARGOCD_PROXY_SERVER" "$ARGOCD_SERVICEACCOUNT"
 
 

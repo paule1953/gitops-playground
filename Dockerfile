@@ -48,16 +48,6 @@ RUN git config --global user.email "job@gop.com" && \
 
 COPY --from=downloader /usr/local/bin  /usr/local/bin
 
-WORKDIR /gop/repos
-RUN git clone --bare https://github.com/cloudogu/spring-boot-helm-chart.git && \
-    git clone --bare https://github.com/cloudogu/spring-petclinic.git && \
-    git clone --bare https://github.com/cloudogu/gitops-build-lib.git && \
-    git clone --bare https://github.com/cloudogu/ces-build-lib.git
-ENV SPRING_BOOT_HELN_CHART_REPO /gop/repos/spring-boot-helm-chart.git
-ENV SPRING_PETCLINIC_REPO /gop/repos/spring-petclinic.git
-ENV GITOPS_BUILD_LIB_REPO /gop/repos/gitops-build-lib.git
-ENV CES_BUILD_LIB_REPO /gop/repos/ces-build-lib.git
-
 ENV HELM_CACHE_HOME="/home/.cache/helm" \
     HELM_CONFIG_HOME="/home/.config/helm" \
     HELM_DATA_HOME="/home/.local/share/helm" \
@@ -65,6 +55,19 @@ ENV HELM_CACHE_HOME="/home/.cache/helm" \
     HELM_REGISTRY_CONFIG="/home/.config/helm/registry.json" \
     HELM_REPOSITORY_CACHE="/home/.cache/helm/repository" \
     HELM_REPOSITORY_CONFIG="/home/.config/helm/repositories.yaml"
+
+WORKDIR /gop/repos
+RUN git clone --bare https://github.com/cloudogu/spring-boot-helm-chart.git && \
+    git clone --bare https://github.com/cloudogu/spring-petclinic.git && \
+    git clone --bare https://github.com/cloudogu/gitops-build-lib.git && \
+    git clone --bare https://github.com/cloudogu/ces-build-lib.git && \
+    curl -OL https://github.com/argoproj/argo-helm/releases/download/argo-cd-3.6.2/argo-cd-3.6.2.tgz
+
+ENV SPRING_BOOT_HELN_CHART_REPO /gop/repos/spring-boot-helm-chart.git
+ENV SPRING_PETCLINIC_REPO /gop/repos/spring-petclinic.git
+ENV GITOPS_BUILD_LIB_REPO /gop/repos/gitops-build-lib.git
+ENV CES_BUILD_LIB_REPO /gop/repos/ces-build-lib.git
+ENV ARGOCD_HELM_CHART_SOURCE /gop/repos/argo-cd-3.6.2.tgz
 
 WORKDIR /gop
 COPY . /gop/
