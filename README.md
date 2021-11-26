@@ -16,7 +16,7 @@ TLDR; You can run a local k8s cluster with the GitOps playground installed with 
 ```shell
 docker pull ghcr.io/cloudogu/gitops-playground && \ 
 bash <(curl -s \
-  https://raw.githubusercontent.com/cloudogu/gitops-playground/main/scripts/init-cluster.sh) \
+  https://raw.githubusercontent.com/paule1953/gitops-playground/main/scripts/init-cluster.sh) \
   && sleep 2 && docker run --rm -it -u $(id -u) -v ~/.k3d/kubeconfig-gitops-playground.yaml:/home/.kube/config \
     --net=host \
     ghcr.io/cloudogu/gitops-playground --yes
@@ -34,24 +34,44 @@ We recommend running this command as an unprivileged user, that is inside the [d
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [What is the GitOps Playground?](#what-is-the-gitops-playground)
-- [Installation](#installation)
-  - [Create Cluster](#create-cluster)
-  - [Apply playground](#apply-playground)
-    - [Apply via Docker (local cluster)](#apply-via-docker-local-cluster)
-    - [Apply via kubectl (remote cluster)](#apply-via-kubectl-remote-cluster)
-    - [Additional parameters](#additional-parameters)
-  - [Remove playground](#remove-playground)
-- [Applications](#applications)
-  - [Credentials](#credentials)
-  - [Jenkins](#jenkins)
-  - [SCM-Manager](#scm-manager)
-  - [ArgoCD UI](#argocd-ui)
-  - [Demo applications](#demo-applications)
-    - [Flux V1](#flux-v1)
-    - [Flux V2](#flux-v2)
-    - [ArgoCD](#argocd)
-- [Testing](#testing)
+- [gitops-playground](#gitops-playground)
+- [Table of contents](#table-of-contents)
+  - [What is the GitOps Playground?](#what-is-the-gitops-playground)
+  - [Installation](#installation)
+    - [Create Cluster](#create-cluster)
+    - [Apply playground](#apply-playground)
+      - [Apply via Docker (local cluster)](#apply-via-docker-local-cluster)
+      - [Apply via kubectl (remote cluster)](#apply-via-kubectl-remote-cluster)
+      - [Additional parameters](#additional-parameters)
+        - [Deploy specific GitOps operators only](#deploy-specific-gitops-operators-only)
+        - [Deploy with local Cloudogu Ecosystem](#deploy-with-local-cloudogu-ecosystem)
+        - [Deploy with productive Cloudogu Ecosystem and GCR](#deploy-with-productive-cloudogu-ecosystem-and-gcr)
+        - [Override default images used in the gitops-build-lib](#override-default-images-used-in-the-gitops-build-lib)
+        - [ArgoCD-Notifications](#argocd-notifications)
+        - [Metrics](#metrics)
+    - [Mailhog and alerts](#mailhog-and-alerts)
+    - [Remove playground](#remove-playground)
+  - [Applications](#applications)
+    - [Credentials](#credentials)
+    - [Jenkins](#jenkins)
+          - [External Jenkins](#external-jenkins)
+    - [SCM-Manager](#scm-manager)
+          - [External SCM-Manager](#external-scm-manager)
+    - [ArgoCD UI](#argocd-ui)
+    - [Demo applications](#demo-applications)
+      - [Flux V1](#flux-v1)
+        - [PetClinic with plain k8s resources](#petclinic-with-plain-k8s-resources)
+        - [PetClinic with helm](#petclinic-with-helm)
+        - [3rd Party app (NGINX) with helm](#3rd-party-app-nginx-with-helm)
+      - [Flux V2](#flux-v2)
+        - [PetClinic with plain k8s resources](#petclinic-with-plain-k8s-resources-1)
+      - [ArgoCD](#argocd)
+        - [PetClinic with plain k8s resources](#petclinic-with-plain-k8s-resources-2)
+        - [PetClinic with helm](#petclinic-with-helm-1)
+        - [3rd Party app (NGINX) with helm](#3rd-party-app-nginx-with-helm-1)
+    - [Testing](#testing)
+      - [Usage](#usage)
+      - [Options](#options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -98,7 +118,7 @@ If you don't have a demo cluster at hand we provide scripts to create either
 * a local k3d cluster (see [docs](docs/k3d.md) or [script](scripts/init-cluster.sh) for more details):
   ```shell
   bash <(curl -s \
-    https://raw.githubusercontent.com/cloudogu/gitops-playground/main/scripts/init-cluster.sh)
+    https://raw.githubusercontent.com/paule1953/gitops-playground/main/scripts/init-cluster.sh)
   ```
 * a remote k8s cluster on Google Kubernetes Engine (e.g. via Terraform, see our [docs](docs/gke.md)),
 * or almost any k8s cluster.  
@@ -277,7 +297,7 @@ On remote clusters there is a [script](scripts/destroy.sh) inside this repo:
 
 ```shell
 bash <(curl -s \
-  https://raw.githubusercontent.com/cloudogu/gitops-playground/main/scripts/destroy.sh) 
+  https://raw.githubusercontent.com/paule1953/gitops-playground/main/scripts/destroy.sh) 
 ```
 
 ## Applications
